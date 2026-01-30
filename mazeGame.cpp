@@ -78,7 +78,7 @@ void loadMaze(string path) {
 }
 
 void renderMaze() {
-    for (string s : maze) cout << s;
+    for (string s : maze) cout << s << endl;;
 }
 
 int main()
@@ -90,11 +90,10 @@ int main()
     Player player;
     player_moveTo(&player, start.x, start.y);
 
-    char c = 32;
+    char c = 0;
     while (c != 27) {
-        if (!_kbhit()) continue;
+        if(_kbhit()) while (_kbhit()) c = _getch();
 
-        while (_kbhit()) c = _getch();
         if (c == 32) break;
         else if (c == 72 || c == 119) player_moveUp(&player);
         else if (c == 75 || c == 97) player_moveLeft(&player);
@@ -105,8 +104,8 @@ int main()
             goToXY(0, 25);
             break;
         }
-        /*if (c != 27) Sleep(300);
-        else goToXY(0, 25);*/
+
+        Sleep(100);
     }
 
     return 0;
