@@ -5,11 +5,12 @@
 #include "ConsoleUtils.h"
 
 int main() {
+    ConsoleCursorConcealer();
     std::setlocale(LC_ALL, "");
     MazeGame game(25, 15);
 
     char input = 0;
-    while (input != 27 && input != 32) {
+    while (input != 27) {
         game.draw();
 
         if (game.isGameOver()) {
@@ -17,9 +18,11 @@ int main() {
             break;
         }
 
+        //if (_kbhit()) {
+            //input = _getch();
+            //if (input == 0 || input == 224) input = _getch();
         if (_kbhit()) {
-            input = _getch();
-            if (input == 0 || input == 224) input = _getch();
+            while (_kbhit()) input = _getch();
 
             switch (input) {
             case 'w': case 72: game.moveUp(); break;

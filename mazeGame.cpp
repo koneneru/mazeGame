@@ -1,11 +1,11 @@
-﻿#include <iostream>
+﻿#include "MazeGame.h"
+#include <iostream>
 #include <vector>
 #include <stack>
 #include <queue>
 #include <limits>
 #include <random>
 #include <chrono>
-#include "MazeGame.h"
 #include "GameTypes.h"
 #include "ConsoleUtils.h"
 
@@ -16,7 +16,13 @@ MazeGame::MazeGame(int w, int h) {
     // Для корректной генерации стен размеры должны быть нечётными
     width = w | 1;
     height = h | 1;
+
+    screenBuffer = new ConsoleBuffer(width * 2, height + 10);
     generateMaze();
+}
+
+MazeGame::~MazeGame() {
+    delete screenBuffer;
 }
 
 
@@ -129,31 +135,38 @@ void MazeGame::findShortestPath() {
 }
 
 void MazeGame::draw() {
-    //goToXY(0, 0);
-    std::cout << "\033[2J\033[H" << std::flush;
-
     if (showHint) findShortestPath();
 
+    screenBuffer->clear();
+    std::string frame = "";
+
     Point playerPos = player.getPosition();
+
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            if (x == playerPos.x && y == playerPos.y) std::cout << PLAYER << ' ';
-            else if (x == exit.x && y == exit.y) std::cout << EXIT << ' ';
+            if (x == playerPos.x && y == playerPos.y) frame += PLAYER;
+            else if (x == exit.x && y == exit.y) frame += EXIT;
             else if (showHint
                 && std::find(shortestPath.begin(), shortestPath.end(), Point{ x, y }) != shortestPath.end()
-                && Point{ x, y } != exit) {
-                std::cout << ROUTE << ' ';
+                && Point { x, y } != exit) {
+                frame += ROUTE;
             }
-            else std::cout << grid[y][x] << ' ';
+            else {
+                frame += grid[y][x];
+            }
+            frame += ' ';
         }
-        std::cout << std::endl;
+        frame += '\n';
     }
 
-    std::cout << "\n=== Управление ===\n";
-    std::cout << "WASD или стрелочки - Перемещение\n";
-    std::cout << "H - Подсказка\n";
-    std::cout << "R - Сброс\n";
-    std::cout << "Esc - Выход\n";
+    frame += "\n=== Управление ===\n";
+    frame += "WASD или стрелочки - Перемещение\n";
+    frame += "H - Подсказка\n";
+    frame += "R - Сброс\n";
+    frame += "Esc - Выход\n";
+
+    screenBuffer->write(frame);
+    screenBuffer->swap();
 }
 
 void MazeGame::moveUp() { handlePlayerMove(player.getNextUp()); }

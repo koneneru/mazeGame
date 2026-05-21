@@ -123,10 +123,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ConsoleBuffer.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MazeGame.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ConsoleBuffer.h" />
     <ClInclude Include="ConsoleUtils.h" />
     <ClInclude Include="GameTypes.h" />
     <ClInclude Include="headers\point.h" />
