@@ -1,112 +1,167 @@
 ﻿#include <iostream>
-#include <fstream>
-#include <windows.h>
-#include <conio.h>
-#include <string>
 #include <vector>
-using namespace std;
+#include <stack>
+#include <queue>
+#include <limits>
+#include <random>
+#include <chrono>
+#include "MazeGame.h"
+#include "GameTypes.h"
+#include "ConsoleUtils.h"
 
-void goToXY(int x, int y) {
-    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    COORD cord = { x,y };
-    SetConsoleCursorPosition(hOut, cord);
+const int DX[] = { 0, 0, -1, 1 };
+const int DY[] = { -1, 1, 0, 0 };
+
+MazeGame::MazeGame(int w, int h) {
+    // Для корректной генерации стен размеры должны быть нечётными
+    width = w | 1;
+    height = h | 1;
+    generateMaze();
 }
 
-typedef struct Point {
-    int x, y;
-    bool operator==(const Point& other) const {
-        return x == other.x && y == other.y;
-    }
-} Point;
 
-Point start;
-Point finish;
-vector<string> maze;
-
-typedef struct {
-    Point position;
-} Player;
-
-void player_moveTo(Player* p, int x, int y) {
-    if (x == -1 || y == -1 || x == maze[0].size() || y == maze.size() || maze[y][x] == '#') return;
-
-    goToXY(p->position.x, p->position.y);
-    cout << ' ';
-    goToXY(x, y);
-    cout << '0';
-
-    p->position.x = x;
-    p->position.y = y;
+int MazeGame::heuristic(Point p1, Point p2) const {
+    return std::abs(p1.x - p2.x) + std::abs(p1.y - p2.y);
 }
 
-void player_moveUp(Player* p) {
-    player_moveTo(p, p->position.x, p->position.y - 1);
-}
+void MazeGame::generateMaze() {
+    grid.assign(height, std::vector<char>(width, WALL));
+    std::stack<Point> stack;
 
-void player_moveLeft(Player* p) {
-    player_moveTo(p, p->position.x - 1, p->position.y);
-}
+    Point start = { 1, 1 };
+    grid[start.y][start.x] = PATH;
+    stack.push(start);
 
-void player_moveDown(Player* p) {
-    player_moveTo(p, p->position.x, p->position.y + 1);
-}
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    std::mt19937 gen(seed);
 
-void player_moveRight(Player* p) {
-    player_moveTo(p, p->position.x + 1, p->position.y);
-}
+    while (!stack.empty()) {
+        Point cur = stack.top();
+        std::vector<int> neighbors;
 
-void loadMaze(string path) {
-    ifstream file(path);
-    if (!file.is_open()) {
-        cerr << "opening file failed" << endl;
-        exit(1);
-    }
+        for (int i = 0; i < 4; i++) {
+            int nx = cur.x + DX[i] * 2;
+            int ny = cur.y + DY[i] * 2;
 
-    string str;
-    while (str != "start") getline(file, str);
-    file >> start.x >> start.y;
+            if (nx > 0 && nx < width - 1 && ny > 0 && ny < height - 1) {
+                if (grid[ny][nx] == WALL) neighbors.push_back(i);
+            }
+        }
 
-    while (str != "finish") getline(file, str);
-    file >> finish.x >> finish.y;
+        if (!neighbors.empty()) {
+            std::uniform_int_distribution<> dis(0, neighbors.size() - 1);
+            int dir = neighbors[dis(gen)];
 
-    while (str != "maze") getline(file, str);
-    while (getline(file, str)) {
-        maze.push_back(str);
+            int nx = cur.x + DX[dir] * 2;
+            int ny = cur.y + DY[dir] * 2;
+
+            grid[cur.y + DY[dir]][cur.x + DX[dir]] = PATH;
+            grid[ny][nx] = PATH;
+
+            stack.push({ nx, ny });
+        }
+        else {
+            stack.pop();
+        }
     }
 
-    file.close();
+    player = Player({ 1, 1 });
+    exit = { width - 2, height - 2 };
+    grid[1][1] = PATH;
+    grid[exit.y][exit.x] = PATH;
 }
 
-void renderMaze() {
-    for (string s : maze) cout << s << endl;;
+void MazeGame::handlePlayerMove(Point next) {
+    if (grid[next.y][next.x] != WALL) player.moveTo(next);
 }
 
-int main()
-{
-    string pathToMazeFile = "maze.txt";
-    loadMaze(pathToMazeFile);
-    renderMaze();
+void MazeGame::findShortestPath() {
+    shortestPath.clear();
 
-    Player player;
-    player_moveTo(&player, start.x, start.y);
+    // Очередь с сортировкой по f-score
+    std::priority_queue<AStarNode, std::vector<AStarNode>, std::greater<AStarNode>> openSet;
+    // Матрица стоимости g
+    std::vector<std::vector<int>> gScore(height, std::vector<int> (width, (std::numeric_limits<int>::max)()));
+    // Матрица предков для восстановления пути
+    std::vector<std::vector<Point>> parent(height, std::vector<Point>(width, { -1, -1 }));
 
-    char c = 0;
-    while (c != 27) {
-        if(_kbhit()) while (_kbhit()) c = _getch();
+    Point playerPos = player.getPosition();
+    gScore[playerPos.y][playerPos.x] = 0;
+    openSet.push({ playerPos, 0, heuristic(playerPos, exit) });
 
-        if (c == 32) break;
-        else if (c == 72 || c == 119) player_moveUp(&player);
-        else if (c == 75 || c == 97) player_moveLeft(&player);
-        else if (c == 80 || c == 115) player_moveDown(&player);
-        else if (c == 77 || c == 100) player_moveRight(&player);
+    bool found = false;
+    while (!openSet.empty()) {
+        AStarNode cur = openSet.top();
+        openSet.pop();
 
-        if (c == 27 || player.position == finish) {
-            goToXY(0, 25);
+        if (cur.g > gScore[cur.pt.y][cur.pt.x]) continue;
+
+        if (cur.pt == exit) {
+            found = true;
             break;
         }
 
-        Sleep(100);
+        for (int i = 0; i < i + 4;i++) {
+            int nx = cur.pt.x + DX[i];
+            int ny = cur.pt.y + DY[i];
+
+            if (nx >= 0 && nx < width && ny >= 0 && ny < height && grid[ny][nx] != WALL) {
+                int tentative_gScore = cur.g + 1;
+
+                if (tentative_gScore < gScore[ny][nx]) {
+                    parent[ny][nx] = cur.pt;
+                    gScore[ny][nx] = tentative_gScore;
+                    int fScore = tentative_gScore + heuristic({ ny, nx }, exit);
+                    openSet.push({ { nx, ny }, tentative_gScore, fScore });
+                }
+            }
+        }
     }
 
-    return 0;
+    if (found) {
+        Point cur = exit;
+        while (!(cur == player.getPosition())) {
+            shortestPath.push_back(cur);
+            cur = parent[cur.y][cur.x];
+        }
+        std::reverse(shortestPath.begin(), shortestPath.end());
+    }
 }
+
+void MazeGame::draw() {
+    //goToXY(0, 0);
+    std::cout << "\033[2J\033[H" << std::flush;
+
+    if (showHint) findShortestPath();
+
+    Point playerPos = player.getPosition();
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            if (x == playerPos.x && y == playerPos.y) std::cout << PLAYER << ' ';
+            else if (x == exit.x && y == exit.y) std::cout << EXIT << ' ';
+            else if (showHint
+                && std::find(shortestPath.begin(), shortestPath.end(), Point{ x, y }) != shortestPath.end()
+                && Point{ x, y } != exit) {
+                std::cout << ROUTE << ' ';
+            }
+            else std::cout << grid[y][x] << ' ';
+        }
+        std::cout << std::endl;
+    }
+
+    std::cout << "\n=== Управление ===\n";
+    std::cout << "WASD или стрелочки - Перемещение\n";
+    std::cout << "H - Подсказка\n";
+    std::cout << "R - Сброс\n";
+    std::cout << "Esc - Выход\n";
+}
+
+void MazeGame::moveUp() { handlePlayerMove(player.getNextUp()); }
+void MazeGame::moveDown() { handlePlayerMove(player.getNextDown()); }
+void MazeGame::moveLeft() { handlePlayerMove(player.getNextLeft()); }
+void MazeGame::moveRight() { handlePlayerMove(player.getNextRight()); }
+     
+void MazeGame::toggleHint() { showHint = !showHint; }
+void MazeGame::resetLevel() { generateMaze(); }
+bool MazeGame::isGameOver() const { return player.getPosition() == exit; }
+int MazeGame::getConsoleOffset() const { return height + 7; }
