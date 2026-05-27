@@ -107,7 +107,7 @@ void MazeGame::findShortestPath() {
             break;
         }
 
-        for (int i = 0; i < i + 4;i++) {
+        for (int i = 0; i < 4; i++) {
             int nx = cur.pt.x + DX[i];
             int ny = cur.pt.y + DY[i];
 
@@ -117,7 +117,7 @@ void MazeGame::findShortestPath() {
                 if (tentative_gScore < gScore[ny][nx]) {
                     parent[ny][nx] = cur.pt;
                     gScore[ny][nx] = tentative_gScore;
-                    int fScore = tentative_gScore + heuristic({ ny, nx }, exit);
+                    int fScore = tentative_gScore + heuristic({ nx, ny }, exit);
                     openSet.push({ { nx, ny }, tentative_gScore, fScore });
                 }
             }
