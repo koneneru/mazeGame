@@ -3,19 +3,19 @@
 
 class Player {
 private:
-	Point pos;
+	Point2D pos;
 
 public:
 	Player() : pos({ 1, 1 }) {}
-	Player(Point sp) : pos(sp) {}
+	Player(Point2D sp) : pos(sp) {}
 
-	Point getPosition() const { return pos; }
-	void setPosition(Point p) { pos = p; }
+	Point2D getPosition() const { return pos; }
+	void setPosition(Point2D p) { pos = p; }
 
-	Point getNextUp() const { return { pos.x, pos.y - 1 }; }
-	Point getNextDown() const { return { pos.x, pos.y + 1 }; }
-	Point getNextLeft() const { return { pos.x - 1, pos.y }; }
-	Point getNextRight() const { return { pos.x + 1, pos.y }; }
+	Point2D getNextUp() const { return { pos.x, pos.y - 1 }; }
+	Point2D getNextDown() const { return { pos.x, pos.y + 1 }; }
+	Point2D getNextLeft() const { return { pos.x - 1, pos.y }; }
+	Point2D getNextRight() const { return { pos.x + 1, pos.y }; }
 
-	void moveTo(Point np) { pos = np; }
+	void moveTo(Point2D np) { pos = np; }
 };

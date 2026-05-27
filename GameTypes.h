@@ -8,7 +8,7 @@ const char EXIT = '!';
 const char ROUTE = '.';
 
 struct AStarNode {
-    Point pt;
+    Point2D pt;
     int g;
     int f;
 

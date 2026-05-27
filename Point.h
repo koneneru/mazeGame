@@ -1,11 +1,11 @@
 #pragma once
 
-struct Point {
+struct Point2D {
     int x, y;
-    bool operator==(const Point& other) const {
+    bool operator==(const Point2D& other) const {
         return x == other.x && y == other.y;
     }
-    bool operator!=(const Point& other) const {
+    bool operator!=(const Point2D& other) const {
         return x != other.x || y != other.y;
     }
 };

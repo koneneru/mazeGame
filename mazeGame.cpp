@@ -26,15 +26,15 @@ MazeGame::~MazeGame() {
 }
 
 
-int MazeGame::heuristic(Point p1, Point p2) const {
+int MazeGame::heuristic(Point2D p1, Point2D p2) const {
     return std::abs(p1.x - p2.x) + std::abs(p1.y - p2.y);
 }
 
 void MazeGame::generateMaze() {
     grid.assign(height, std::vector<char>(width, WALL));
-    std::stack<Point> stack;
+    std::stack<Point2D> stack;
 
-    Point start = { 1, 1 };
+    Point2D start = { 1, 1 };
     grid[start.y][start.x] = PATH;
     stack.push(start);
 
@@ -42,7 +42,7 @@ void MazeGame::generateMaze() {
     std::mt19937 gen(seed);
 
     while (!stack.empty()) {
-        Point cur = stack.top();
+        Point2D cur = stack.top();
         std::vector<int> neighbors;
 
         for (int i = 0; i < 4; i++) {
@@ -77,7 +77,7 @@ void MazeGame::generateMaze() {
     grid[exit.y][exit.x] = PATH;
 }
 
-void MazeGame::handlePlayerMove(Point next) {
+void MazeGame::handlePlayerMove(Point2D next) {
     if (grid[next.y][next.x] != WALL) player.moveTo(next);
 }
 
@@ -89,9 +89,9 @@ void MazeGame::findShortestPath() {
     // Матрица стоимости g
     std::vector<std::vector<int>> gScore(height, std::vector<int> (width, (std::numeric_limits<int>::max)()));
     // Матрица предков для восстановления пути
-    std::vector<std::vector<Point>> parent(height, std::vector<Point>(width, { -1, -1 }));
+    std::vector<std::vector<Point2D>> parent(height, std::vector<Point2D>(width, { -1, -1 }));
 
-    Point playerPos = player.getPosition();
+    Point2D playerPos = player.getPosition();
     gScore[playerPos.y][playerPos.x] = 0;
     openSet.push({ playerPos, 0, heuristic(playerPos, exit) });
 
@@ -125,7 +125,7 @@ void MazeGame::findShortestPath() {
     }
 
     if (found) {
-        Point cur = exit;
+        Point2D cur = exit;
         while (!(cur == player.getPosition())) {
             shortestPath.push_back(cur);
             cur = parent[cur.y][cur.x];
@@ -140,15 +140,15 @@ void MazeGame::draw() {
     screenBuffer->clear();
     std::string frame = "";
 
-    Point playerPos = player.getPosition();
+    Point2D playerPos = player.getPosition();
 
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             if (x == playerPos.x && y == playerPos.y) frame += PLAYER;
             else if (x == exit.x && y == exit.y) frame += EXIT;
             else if (showHint
-                && std::find(shortestPath.begin(), shortestPath.end(), Point{ x, y }) != shortestPath.end()
-                && Point { x, y } != exit) {
+                && std::find(shortestPath.begin(), shortestPath.end(), Point2D{ x, y }) != shortestPath.end()
+                && Point2D { x, y } != exit) {
                 frame += ROUTE;
             }
             else {

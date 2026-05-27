@@ -9,15 +9,15 @@ private:
     std::vector<std::vector<char>> grid;
 
     Player player;
-    Point exit;
-    std::vector<Point> shortestPath;
+    Point2D exit;
+    std::vector<Point2D> shortestPath;
     bool showHint = false;
 
     ConsoleBuffer* screenBuffer;
 
-    int heuristic(Point p1, Point p2) const;
+    int heuristic(Point2D p1, Point2D p2) const;
     void generateMaze();
-    void handlePlayerMove(Point next);
+    void handlePlayerMove(Point2D next);
 
 public:
     MazeGame(int w, int h);
